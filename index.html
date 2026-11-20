@@ -1,0 +1,400 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master</title>
+   <style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #141e30, #243b55);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.quiz-container {
+    background: white;
+    width: 100%;
+    max-width: 550px;
+    padding: 30px;
+    border-radius: 18px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    color: #243b55;
+    font-size: 30px;
+    margin-bottom: 8px;
+}
+
+.header p {
+    color: #777;
+    font-size: 14px;
+}
+
+.quiz-info {
+    display: flex;
+    justify-content: space-between;
+    color: #555;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.progress-bar {
+    height: 9px;
+    background: #e5e7eb;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 25px;
+}
+
+#progress {
+    height: 100%;
+    width: 0%;
+    background: #2563eb;
+    transition: width 0.3s;
+}
+
+#question {
+    font-size: 21px;
+    color: #1e293b;
+    margin-bottom: 22px;
+    line-height: 1.4;
+}
+
+.option {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    text-align: left;
+    font-size: 15px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.option:hover:not(:disabled) {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.option.selected {
+    background: #dbeafe;
+    border-color: #2563eb;
+    color: #1d4ed8;
+}
+
+.option:disabled {
+    cursor: default;
+}
+
+#next-btn,
+#restart-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: #2563eb;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+#next-btn:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+}
+
+#next-btn:hover:not(:disabled),
+#restart-btn:hover {
+    background: #1d4ed8;
+}
+
+.hidden {
+    display: none;
+}
+
+#result-box {
+    text-align: center;
+    padding: 20px 0;
+}
+
+#result-box h2 {
+    color: #243b55;
+}
+
+.result-icon {
+    font-size: 65px;
+    margin: 20px;
+}
+
+#final-score {
+    color: #2563eb;
+    font-size: 25px;
+    margin-bottom: 15px;
+}
+
+#result-message {
+    color: #64748b;
+}
+
+@media (max-width: 480px) {
+    .quiz-container {
+        padding: 20px;
+    }
+
+    .header h1 {
+        font-size: 25px;
+    }
+
+    #question {
+        font-size: 18px;
+    }
+}
+
+   </style>
+</head>
+<body>
+
+    <div class="quiz-container">
+
+        <div class="header">
+            <h1>Quiz Master</h1>
+            <p>Test Your Web Development Knowledge</p>
+        </div>
+
+        <div id="quiz-box">
+
+            <div class="quiz-info">
+                <span id="question-number">Question 1 / 5</span>
+                <span id="score">Score: 0</span>
+            </div>
+
+            <div class="progress-bar">
+                <div id="progress"></div>
+            </div>
+
+            <h2 id="question">Question goes here</h2>
+
+            <div id="options"></div>
+
+            <button id="next-btn" disabled>Next Question →</button>
+
+        </div>
+
+        <div id="result-box" class="hidden">
+            <h2>Quiz Completed!</h2>
+            <div class="result-icon">🏆</div>
+            <h3 id="final-score">Your Score: 0/5</h3>
+            <p id="result-message"></p>
+            <button id="restart-btn">Restart Quiz ↻</button>
+        </div>
+
+    </div>
+
+    <script>
+
+const questions = [
+    {
+        question: "What does HTML stand for?",
+        options: [
+            "Hyper Text Markup Language",
+            "High Text Machine Language",
+            "Hyperlink Text Management Language",
+            "Home Tool Markup Language"
+        ],
+        answer: 0
+    },
+    {
+        question: "Which language is used to style web pages?",
+        options: [
+            "HTML",
+            "CSS",
+            "Java",
+            "SQL"
+        ],
+        answer: 1
+    },
+    {
+        question: "Which language adds interactivity to webpages?",
+        options: [
+            "CSS",
+            "HTML",
+            "JavaScript",
+            "XML"
+        ],
+        answer: 2
+    },
+    {
+        question: "Which symbol is used for an ID selector in CSS?",
+        options: [
+            ".",
+            "#",
+            "@",
+            "*"
+        ],
+        answer: 1
+    },
+    {
+        question: "Which HTML tag is used to create a hyperlink?",
+        options: [
+            "<link>",
+            "<href>",
+            "<a>",
+            "<url>"
+        ],
+        answer: 2
+    }
+];
+
+let currentQuestion = 0;
+let score = 0;
+let selectedAnswer = null;
+
+const questionNumber = document.getElementById("question-number");
+const scoreDisplay = document.getElementById("score");
+const questionElement = document.getElementById("question");
+const optionsElement = document.getElementById("options");
+const nextBtn = document.getElementById("next-btn");
+const progress = document.getElementById("progress");
+
+const quizBox = document.getElementById("quiz-box");
+const resultBox = document.getElementById("result-box");
+
+function showQuestion() {
+
+    selectedAnswer = null;
+
+    const current = questions[currentQuestion];
+
+    questionNumber.textContent =
+        `Question ${currentQuestion + 1} / ${questions.length}`;
+
+    scoreDisplay.textContent = `Score: ${score}`;
+
+    questionElement.textContent = current.question;
+
+    progress.style.width =
+        `${(currentQuestion / questions.length) * 100}%`;
+
+    optionsElement.innerHTML = "";
+
+    current.options.forEach((option, index) => {
+
+        const button = document.createElement("button");
+
+        button.textContent = option;
+
+        button.classList.add("option");
+
+        button.addEventListener("click", () => {
+
+            selectedAnswer = index;
+
+            document.querySelectorAll(".option").forEach(btn => {
+                btn.classList.remove("selected");
+            });
+
+            button.classList.add("selected");
+
+            nextBtn.disabled = false;
+
+        });
+
+        optionsElement.appendChild(button);
+
+    });
+
+    nextBtn.disabled = true;
+
+    nextBtn.textContent =
+        currentQuestion === questions.length - 1
+        ? "Finish Quiz"
+        : "Next Question →";
+}
+
+nextBtn.addEventListener("click", () => {
+
+    if (selectedAnswer === null) return;
+
+    if (selectedAnswer === questions[currentQuestion].answer) {
+        score++;
+    }
+
+    currentQuestion++;
+
+    if (currentQuestion < questions.length) {
+
+        showQuestion();
+
+    } else {
+
+        showResult();
+
+    }
+
+});
+
+function showResult() {
+
+    quizBox.classList.add("hidden");
+
+    resultBox.classList.remove("hidden");
+
+    progress.style.width = "100%";
+
+    document.getElementById("final-score").textContent =
+        `Your Score: ${score}/${questions.length}`;
+
+    let message;
+
+    if (score === questions.length) {
+        message = "Excellent! Perfect Score!";
+    } else if (score >= 3) {
+        message = "Great Job! Keep Learning!";
+    } else {
+        message = "Good Try! Practice More!";
+    }
+
+    document.getElementById("result-message").textContent = message;
+}
+
+document.getElementById("restart-btn").addEventListener("click", () => {
+
+    currentQuestion = 0;
+    score = 0;
+    selectedAnswer = null;
+
+    resultBox.classList.add("hidden");
+
+    quizBox.classList.remove("hidden");
+
+    showQuestion();
+
+});
+
+showQuestion();
+
+    </script>
+</body>
+</html>
